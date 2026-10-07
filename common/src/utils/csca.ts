@@ -150,9 +150,14 @@ export function getCSCAFromSKI(ski: string, skiPem: any = null): string {
   return cscaPem;
 }
 
+const skiPemCache: Record<string, { [key: string]: string }> = {};
+
 export async function getSKIPEM(
   environment: 'staging' | 'production'
 ): Promise<{ [key: string]: string }> {
+  if (skiPemCache[environment]) {
+    return skiPemCache[environment];
+  }
   const skiPemUrl = (environment === 'staging' ? API_URL_STAGING : API_URL) + '/ski-pem';
   console.log('Fetching SKI-PEM mapping from:', skiPemUrl);
   try {
@@ -176,6 +181,7 @@ export async function getSKIPEM(
 
     console.log('Parsed SKI-PEM data received.');
 
+    skiPemCache[environment] = jsonData.data;
     return jsonData.data;
   } catch (error) {
     console.error('Error fetching or parsing ski-pem:', error);

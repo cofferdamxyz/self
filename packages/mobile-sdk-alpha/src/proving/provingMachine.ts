@@ -730,7 +730,7 @@ export const useProvingStore = create<ProvingState>((set, get) => {
             error: result.error,
             duration_ms: Date.now() - startTime,
           });
-          console.error('Received error from TEE:', result.error);
+          console.warn('Received error from TEE:', result.error);
           actor!.send({ type: 'PROVE_ERROR' });
         } else {
           selfClient.logProofEvent('warn', 'Unknown message format', context);
@@ -899,11 +899,25 @@ export const useProvingStore = create<ProvingState>((set, get) => {
     },
 
     _handleWsError: (error: Event, selfClient: SelfClient) => {
-      console.error('TEE WebSocket error event:', error);
       if (!actor) {
         return;
       }
       const context = createProofContext(selfClient, '_handleWsError');
+      const currentState = get().currentState;
+
+      // After payload submission, status updates arrive via Socket.IO, not
+      // WebSocket. Ignore WS errors during proving/listening_for_status to
+      // avoid killing the flow when the WS hits an idle timeout.
+      if (currentState === 'proving' || currentState === 'listening_for_status' || currentState === 'completed' || currentState === 'post_proving') {
+        selfClient.logProofEvent('warn', 'TEE WebSocket error ignored (status via Socket.IO)', context, {
+          state: currentState,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        return;
+      }
+
+      console.warn('TEE WebSocket error event:', error);
+
       selfClient.logProofEvent('error', 'TEE WebSocket error', context, {
         failure: 'PROOF_FAILED_CONNECTION',
         error: error instanceof Error ? error.message : String(error),
@@ -927,19 +941,23 @@ export const useProvingStore = create<ProvingState>((set, get) => {
       });
       const currentState = get().currentState;
 
-      // Handle unexpected close during active proving states
-      if (
-        currentState === 'init_tee_connexion' ||
-        currentState === 'proving' ||
-        currentState === 'listening_for_status'
-      ) {
-        console.error(`TEE WebSocket closed unexpectedly during ${currentState}.`);
+      // Handle unexpected close during active proving states.
+      // During proving/listening_for_status, status updates come via
+      // Socket.IO, so a WS close is not fatal — only log it.
+      if (currentState === 'init_tee_connexion') {
+        console.error('TEE WebSocket closed unexpectedly during init_tee_connexion.');
         get()._handleWebSocketMessage(
           new MessageEvent('error', {
             data: JSON.stringify({ error: 'WebSocket closed unexpectedly' }),
           }),
           selfClient,
         );
+      } else if (currentState === 'proving' || currentState === 'listening_for_status') {
+        selfClient.logProofEvent('warn', 'TEE WebSocket closed (status via Socket.IO)', context, {
+          code: event.code,
+          reason: event.reason,
+          state: currentState,
+        });
       }
 
       // In ready_to_prove state, attempt automatic reconnection to handle network interruptions.
@@ -1276,6 +1294,17 @@ export const useProvingStore = create<ProvingState>((set, get) => {
 
         /// disclosure
         if (circuitType === 'disclose') {
+          const bypassDocumentRegistrationCheck =
+            selfClient.config?.devConfig?.shouldBypassDocumentRegistrationCheck?.() ?? false;
+          if (bypassDocumentRegistrationCheck) {
+            selfClient.logProofEvent(
+              'warn',
+              'Dev bypass active: skipping disclose registration check',
+              context,
+            );
+            actor!.send({ type: 'VALIDATION_SUCCESS' });
+            return;
+          }
           const isRegisteredWithLocalCSCA = await isUserRegistered(
             passportData,
             secret as string,
