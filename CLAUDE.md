@@ -66,3 +66,15 @@ pnpm lint && pnpm types && pnpm build
 - [packages/webview-app/AGENTS.md](./packages/webview-app/AGENTS.md) - WebView app development, Euclid migration, assets.
 - [packages/mobile-sdk-alpha/AGENTS.md](./packages/mobile-sdk-alpha/AGENTS.md) - SDK development, testing guidelines.
 - [noir/AGENTS.md](./noir/AGENTS.md) - Noir circuit development.
+
+## Cofferdam fork
+
+This checkout is `cofferdamxyz/self`, vendored into `cofferdam-app` (the alpha
+RN SDK). Cofferdam's rules for it are `rules/self-monorepo.md`,
+`rules/self-app.md` and `rules/self-mobile-sdk-alpha.md` in the `cofferdam`
+workspace repository: at `../` on the Mac, `../cofferdam/` in a cloud session.
+Delegated git (cloud session, Projects thread): never commit on `main`; commit
+on the session branch with `git commit -s` and the
+`Co-Authored-By: Claude <model> <noreply@anthropic.com>` trailer, push that
+branch at every stopping point, and do not merge or open a pull request unless
+the task says so (workspace decision 0013).
