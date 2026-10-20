@@ -76,5 +76,6 @@ workspace repository: at `../` on the Mac, `../cofferdam/` in a cloud session.
 Delegated git (cloud session, Projects thread): never commit on `main`; commit
 on the session branch with `git commit -s` and the
 `Co-Authored-By: Claude <model> <noreply@anthropic.com>` trailer, push that
-branch at every stopping point, and do not merge or open a pull request unless
-the task says so (workspace decision 0013).
+branch at every stopping point, open a draft pull request against `main` at
+the first push, and never mark it ready, merge or enable auto-merge; the
+founder lands it locally (workspace decision 0013).
