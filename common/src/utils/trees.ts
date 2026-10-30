@@ -270,7 +270,7 @@ export function getDobLeaf(dobMrz: (bigint | number)[], i?: number): bigint {
   try {
     return poseidon6(dobMrz);
   } catch (err) {
-    console.error('Error in getDobLeaf:', err, 'Index:', i, 'DOB MRZ:', dobMrz); // Use console.error
+    console.error('Error in getDobLeaf:', err, 'Index:', i); // Use console.error
     return BigInt(0); // Return 0 on error
   }
 }

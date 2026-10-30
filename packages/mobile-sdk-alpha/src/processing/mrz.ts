@@ -62,8 +62,6 @@ function validateTD3Format(lines: string[]): boolean {
 }
 
 function validateTD1Format(lines: string[]): boolean {
-  console.log('validateTD1Format', lines);
-
   const concatenatedLines = lines[0] + lines[1];
   const TD1_REGEX =
     /^(?<documentType>[A-Z0-9<]{2})(?<issuingCountry>[A-Z<]{3})(?<documentNumber>[A-Z0-9<]{9})(?<checkDigitDocumentNumber>[0-9]{1})(?<optionalData1>[A-Z0-9<]{15})(?<dateOfBirth>[0-9]{6})(?<checkDigitDateOfBirth>[0-9]{1})(?<sex>[MF<]{1})(?<dateOfExpiry>[0-9]{6})(?<checkDigitDateOfExpiry>[0-9]{1})(?<nationality>[A-Z<]{3})(?<optionalData2>[A-Z0-9<]{7})/;
