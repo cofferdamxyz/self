@@ -61,6 +61,8 @@ PODS:
     - ExpoCamera
     - ZXingObjC/OneD
     - ZXingObjC/PDF417
+  - ExpoDocumentPicker (55.0.14):
+    - ExpoModulesCore
   - ExpoDomWebView (55.0.6):
     - ExpoModulesCore
   - ExpoFileSystem (55.0.22):
@@ -99,6 +101,7 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
+    - RNWorklets
     - SocketRocket
     - Yoga
   - ExpoModulesJSI (55.0.24):
@@ -106,6 +109,8 @@ PODS:
     - React-Core
     - React-runtimescheduler
     - ReactCommon
+  - ExpoStoreReview (55.0.17):
+    - ExpoModulesCore
   - fast_float (8.0.0)
   - FBLazyVector (0.83.9)
   - Firebase/Analytics (11.11.0):
@@ -3324,6 +3329,98 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - RNReanimated (4.3.1):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNReanimated/apple (= 4.3.1)
+    - RNReanimated/common (= 4.3.1)
+    - RNWorklets
+    - SocketRocket
+    - Yoga
+  - RNReanimated/apple (4.3.1):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNWorklets
+    - SocketRocket
+    - Yoga
+  - RNReanimated/common (4.3.1):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNWorklets
+    - SocketRocket
+    - Yoga
   - RNScreens (4.15.3):
     - boost
     - DoubleConversion
@@ -3470,6 +3567,95 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - RNWorklets (0.8.3):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNWorklets/apple (= 0.8.3)
+    - RNWorklets/common (= 0.8.3)
+    - SocketRocket
+    - Yoga
+  - RNWorklets/apple (0.8.3):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - SocketRocket
+    - Yoga
+  - RNWorklets/common (0.8.3):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - SocketRocket
+    - Yoga
   - SdkReactNative (4.0.5):
     - boost
     - DiditSDK/AutoDetection (= 4.0.5)
@@ -3534,6 +3720,7 @@ DEPENDENCIES:
   - ExpoAsset (from `../../node_modules/expo-asset/ios`)
   - ExpoCamera (from `../../node_modules/expo-camera/ios`)
   - ExpoCameraBarcodeScanning (from `../../node_modules/expo-camera/ios`)
+  - ExpoDocumentPicker (from `../../node_modules/expo-document-picker/ios`)
   - "ExpoDomWebView (from `../../node_modules/@expo/dom-webview/ios`)"
   - ExpoFileSystem (from `../../node_modules/expo-file-system/ios`)
   - ExpoFont (from `../../node_modules/expo-font/ios`)
@@ -3541,6 +3728,7 @@ DEPENDENCIES:
   - "ExpoLogBox (from `../../node_modules/@expo/log-box`)"
   - ExpoModulesCore (from `../../node_modules/expo-modules-core`)
   - ExpoModulesJSI (from `../../node_modules/expo-modules-core`)
+  - ExpoStoreReview (from `../../node_modules/expo-store-review/ios`)
   - fast_float (from `../../node_modules/react-native/third-party-podspecs/fast_float.podspec`)
   - FBLazyVector (from `../../node_modules/react-native/Libraries/FBLazyVector`)
   - fmt (from `../../node_modules/react-native/third-party-podspecs/fmt.podspec`)
@@ -3650,9 +3838,11 @@ DEPENDENCIES:
   - RNLocalize (from `../../node_modules/react-native-localize`)
   - RNPermissions (from `../../node_modules/react-native-permissions`)
   - RNReactNativeHapticFeedback (from `../../node_modules/react-native-haptic-feedback`)
+  - RNReanimated (from `../../node_modules/react-native-reanimated`)
   - RNScreens (from `../../node_modules/react-native-screens`)
   - "RNSentry (from `../../node_modules/@sentry/react-native`)"
   - RNSVG (from `../../node_modules/react-native-svg`)
+  - RNWorklets (from `../../node_modules/react-native-worklets`)
   - "SdkReactNative (from `../../node_modules/@didit-protocol/sdk-react-native`)"
   - "segment-analytics-react-native (from `../../node_modules/@segment/analytics-react-native`)"
   - "SelfNFCPassportReader (from `git@github.com:selfxyz/NFCPassportReader.git`, commit `b478e1f1320e86f72c5755bc5adf156fff950585`)"
@@ -3718,6 +3908,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/expo-camera/ios"
   ExpoCameraBarcodeScanning:
     :path: "../../node_modules/expo-camera/ios"
+  ExpoDocumentPicker:
+    :path: "../../node_modules/expo-document-picker/ios"
   ExpoDomWebView:
     :path: "../../node_modules/@expo/dom-webview/ios"
   ExpoFileSystem:
@@ -3732,6 +3924,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/expo-modules-core"
   ExpoModulesJSI:
     :path: "../../node_modules/expo-modules-core"
+  ExpoStoreReview:
+    :path: "../../node_modules/expo-store-review/ios"
   fast_float:
     :podspec: "../../node_modules/react-native/third-party-podspecs/fast_float.podspec"
   FBLazyVector:
@@ -3941,12 +4135,16 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/react-native-permissions"
   RNReactNativeHapticFeedback:
     :path: "../../node_modules/react-native-haptic-feedback"
+  RNReanimated:
+    :path: "../../node_modules/react-native-reanimated"
   RNScreens:
     :path: "../../node_modules/react-native-screens"
   RNSentry:
     :path: "../../node_modules/@sentry/react-native"
   RNSVG:
     :path: "../../node_modules/react-native-svg"
+  RNWorklets:
+    :path: "../../node_modules/react-native-worklets"
   SdkReactNative:
     :path: "../../node_modules/@didit-protocol/sdk-react-native"
   segment-analytics-react-native:
@@ -3985,13 +4183,15 @@ SPEC CHECKSUMS:
   ExpoAsset: 7721c5c4ae2a7c3c8147a046727ac6c020b05648
   ExpoCamera: 1f783af198ebb299f430758c86af8339cf7d63a9
   ExpoCameraBarcodeScanning: 76e0fe3e7d5b17c3c73f1cae8a3ffe76df9e971f
+  ExpoDocumentPicker: f7bb7d99ad78f5d3c526930275b5cd34446276bc
   ExpoDomWebView: b2e9d601f9cb77d3c97da73234e175b64be91928
   ExpoFileSystem: 61e663d0bbd1a973d324530d1d6ee559a5e5192c
   ExpoFont: a7e34a75bdfb703fa07a0e87807f836236608c76
   ExpoKeepAwake: d0eb7a0719500d2a43fbf29b6f79e84d70c75ebf
   ExpoLogBox: 617da77cbc083627692b2ea050a3666808aef2cd
-  ExpoModulesCore: 08e767f43da6e4f0a56cabb59d5b447a12134f98
+  ExpoModulesCore: dfa76e2009e1b6b602bd7b4c2a5ed0a59ce33a6c
   ExpoModulesJSI: bbd6d912b19ba7455d95b2c2fd3bc73459f8cba9
+  ExpoStoreReview: 895668d2c4f503286ef2100b431d9561d7039d1a
   fast_float: b32c788ed9c6a8c584d114d0047beda9664e7cc6
   FBLazyVector: 3bcb3055086e5d90a12f0fe1668e79f6eceabc17
   Firebase: 6a8f201c61eda24e98f1ce2b44b1b9c2caf525cc
@@ -4013,7 +4213,7 @@ SPEC CHECKSUMS:
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
   GTMAppAuth: 217a876b249c3c585a54fd6f73e6b58c4f5c4238
   GTMSessionFetcher: 5aea5ba6bd522a239e236100971f10cb71b96ab6
-  hermes-engine: 614e4e1feaa65d21b146116092ba76b73aad4791
+  hermes-engine: 0a91343a47f666f770930fdd0ebae0235f97c917
   lottie-ios: 8f959969761e9c45d70353667d00af0e5b9cadb3
   lottie-react-native: e542fe4b6e8eddcf893d5a8cef9f8b5c6d2f7331
   Mixpanel-swift: e9bef28a9648faff384d5ba6f48ecc2787eb24c0
@@ -4120,9 +4320,11 @@ SPEC CHECKSUMS:
   RNLocalize: c46dd4008dc8990a098fcafd6ee051122a1ccfda
   RNPermissions: b469cd9fd82c7e45b04b8620da719c05b97f8ddb
   RNReactNativeHapticFeedback: b9623bdeb59a778ca905e97035d5cc73a15d00f3
+  RNReanimated: 3e7c63d5e4102e8f9c4fc9369b324259538658a7
   RNScreens: 0e35897693c6f1aa38627dc1b4c37c7450e4b902
   RNSentry: adbde98523a92f127f7ac2834cb25a71589f2763
   RNSVG: d9938e7f6ea1616124dd2d64b933322ac2059e05
+  RNWorklets: bfadc8f9d98a1eb571f804440b8e8e0428054ff4
   SdkReactNative: 1d3cf50c4564a2f61c3db8663dedd789911fc5b0
   segment-analytics-react-native: 5df85065a7cf2c07311ec5a4832d5d3092015c98
   SelfNFCPassportReader: 8b53f9d483e0dd1f1a275953e3dc6dfc733694c5

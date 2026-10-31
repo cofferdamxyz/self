@@ -17,7 +17,11 @@ export type {
   RemoteConfigValue,
   StorageBackend,
 } from '@/config/remoteConfig.shared';
-export { LOCAL_OVERRIDES_KEY } from '@/config/remoteConfig.shared';
+export {
+  AADHAAR_PDF_PASSWORD_HINT_FLAG,
+  DEFAULT_AADHAAR_PDF_PASSWORD_HINT,
+  LOCAL_OVERRIDES_KEY,
+} from '@/config/remoteConfig.shared';
 
 // Sentry error tracking
 // Platform-specific files (.ts vs .web.ts) are resolved automatically
@@ -44,8 +48,10 @@ export {
   getFeatureFlag,
   getLocalOverrides,
   initRemoteConfig,
+  readFeatureFlag,
   refreshRemoteConfig,
   setLocalOverride,
+  subscribeToRemoteConfig,
 } from '@/config/remoteConfig';
 
 // Segment analytics

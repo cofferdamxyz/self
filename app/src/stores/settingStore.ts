@@ -6,14 +6,17 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { setCaptureEnabled } from '@/integrations/nfc/fixtureCapture';
+
 type LoggingSeverity = 'debug' | 'info' | 'warn' | 'error';
 
 interface PersistedSettingsState {
   addSubscribedTopic: (topic: string) => void;
-  biometricsAvailable: boolean;
   cloudBackupEnabled: boolean;
   dismissPrivacyNote: () => void;
   fcmToken: string | null;
+  fixtureCaptureEnabled: boolean;
+  nfcDebugRelayUrl: string;
   hasCompletedBackupForPoints: boolean;
   hasCompletedKeychainMigration: boolean;
   hasPrivacyNoteBeenDismissed: boolean;
@@ -28,10 +31,11 @@ interface PersistedSettingsState {
   removeSubscribedTopic: (topic: string) => void;
   resetBackupForPoints: () => void;
   setBackupForPointsCompleted: () => void;
-  setBiometricsAvailable: (biometricsAvailable: boolean) => void;
   setDevModeOff: () => void;
   setDevModeOn: () => void;
   setFcmToken: (token: string | null) => void;
+  setFixtureCaptureEnabled: (enabled: boolean) => void;
+  setNfcDebugRelayUrl: (url: string) => void;
   setHasViewedRecoveryPhrase: (viewed: boolean) => void;
   setKeychainMigrationCompleted: () => void;
   setLoggingSeverity: (severity: LoggingSeverity) => void;
@@ -50,6 +54,12 @@ interface PersistedSettingsState {
 }
 
 interface NonPersistedSettingsState {
+  // A device capability, not a preference: biometric enrolment can be turned off
+  // in OS settings between launches, so a persisted value goes stale and would
+  // keep cloud recovery disabled until it happened to be rewritten. Always
+  // re-read from the OS instead.
+  biometricsAvailable: boolean;
+  setBiometricsAvailable: (biometricsAvailable: boolean) => void;
   // Dev-only one-shot flag armed by the "Test registration circuit" debug
   // shortcut. Bypasses only the document "already registered / nullifier"
   // checks so the register circuit runs even when the document is on-chain.
@@ -67,11 +77,14 @@ interface NonPersistedSettingsState {
 
 type SettingsState = PersistedSettingsState & NonPersistedSettingsState;
 
-export const SETTING_STORE_VERSION = 1;
+export const SETTING_STORE_VERSION = 2;
 
 // v1: force support ID sharing off for all existing users. It is opt-in
 // from here on — users can re-enable it in settings when a support agent
 // asks for it.
+// v2: drop the persisted biometricsAvailable. Excluding it from `partialize`
+// only stops future writes; without deleting it here the stale value would
+// still rehydrate once and clobber the fresh capability check.
 export const migrateSettingStore = (
   persistedState: unknown,
   version: number,
@@ -80,6 +93,9 @@ export const migrateSettingStore = (
   if (version < 1) {
     state.supportUuidEnabled = false;
     state.supportUuid = null;
+  }
+  if (version < 2) {
+    delete state.biometricsAvailable;
   }
   return state as SettingsState;
 };
@@ -146,6 +162,24 @@ export const useSettingStore = create<SettingsState>()(
         set({ hasCompletedKeychainMigration: true }),
       fcmToken: null,
       setFcmToken: (token: string | null) => set({ fcmToken: token }),
+
+      // Opt-in APDU fixture capture. The persisted flag mirrors the native
+      // capture flag; the setter keeps them in sync (disabling also revokes
+      // staged tapes natively). Android-only; no-ops on unsupported builds.
+      fixtureCaptureEnabled: false,
+      setFixtureCaptureEnabled: (enabled: boolean) => {
+        set({ fixtureCaptureEnabled: enabled });
+        setCaptureEnabled(enabled).catch(() => {
+          // Native call failed — revert so the persisted flag never claims
+          // capture is on (or stored tapes were deleted) when it isn't.
+          set({ fixtureCaptureEnabled: !enabled });
+        });
+      },
+
+      // Last-used relay URL for the dev NFC-debug bridge (non-PII convenience).
+      nfcDebugRelayUrl: 'ws://localhost:8080/device',
+      setNfcDebugRelayUrl: (url: string) => set({ nfcDebugRelayUrl: url }),
+
       subscribedTopics: [],
       setSubscribedTopics: (topics: string[]) =>
         set({ subscribedTopics: topics }),
@@ -210,7 +244,13 @@ export const useSettingStore = create<SettingsState>()(
     {
       name: 'setting-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      onRehydrateStorage: () => undefined,
+      // The native capture flag is process-local, so re-assert it from the
+      // persisted preference once the store rehydrates.
+      onRehydrateStorage: () => state => {
+        if (state?.fixtureCaptureEnabled) {
+          setCaptureEnabled(true).catch(() => undefined);
+        }
+      },
       partialize: state => {
         const persistedState = { ...state };
         delete (persistedState as Partial<SettingsState>)
@@ -222,6 +262,9 @@ export const useSettingStore = create<SettingsState>()(
         delete (persistedState as Partial<SettingsState>).testDscCircuitArmed;
         delete (persistedState as Partial<SettingsState>).armTestDscCircuit;
         delete (persistedState as Partial<SettingsState>).consumeTestDscCircuit;
+        delete (persistedState as Partial<SettingsState>).biometricsAvailable;
+        delete (persistedState as Partial<SettingsState>)
+          .setBiometricsAvailable;
         return persistedState;
       },
       version: SETTING_STORE_VERSION,

@@ -3,8 +3,7 @@
 // NOTE: Converts to Apache-2.0 on 2029-06-11 per LICENSE.
 
 import React, { useCallback, useEffect } from 'react';
-import { View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Pressable } from 'react-native';
 import { YStack } from 'tamagui';
 import { useNavigation } from '@react-navigation/native';
 
@@ -18,6 +17,7 @@ import Tips from '@/components/Tips';
 import { useFeedbackAutoHide } from '@/hooks/useFeedbackAutoHide';
 import useHapticNavigation from '@/hooks/useHapticNavigation';
 import { useKycLauncher } from '@/hooks/useKycLauncher';
+import { useMultiTap } from '@/hooks/useMultiTap';
 import { selectionChange } from '@/integrations/haptics';
 import SimpleScrolledTitleLayout from '@/layouts/SimpleScrolledTitleLayout';
 import { flushAllAnalytics } from '@/services/analytics';
@@ -62,7 +62,7 @@ const DocumentNFCTroubleScreen: React.FC = () => {
   const selfClient = useSelfClient();
   const { useMRZStore } = selfClient;
   const { countryCode } = useMRZStore();
-  const { launchKycVerification, isLoading } = useKycLauncher({
+  const { launchKycVerification, isKycAvailable, isLoading } = useKycLauncher({
     countryCode,
   });
   const nfcOptionsRevealed = useNfcTroubleStore(state => state.optionsRevealed);
@@ -74,11 +74,9 @@ const DocumentNFCTroubleScreen: React.FC = () => {
   }, []);
 
   // 5-taps with a single finger
-  const devModeTap = Gesture.Tap()
-    .numberOfTaps(5)
-    .onStart(() => {
-      goToNFCMethodSelection();
-    });
+  const onTitleTap = useMultiTap({
+    thresholds: [{ taps: 5, onReach: goToNFCMethodSelection }],
+  });
 
   return (
     <SimpleScrolledTitleLayout
@@ -92,14 +90,16 @@ const DocumentNFCTroubleScreen: React.FC = () => {
         <YStack gap="$3">
           <SupportUuidRow />
 
-          <SecondaryButton
-            onPress={launchKycVerification}
-            disabled={isLoading}
-            textColor={slate700}
-            style={{ marginBottom: 0 }}
-          >
-            {isLoading ? 'Loading...' : 'Try Alternative Verification'}
-          </SecondaryButton>
+          {isKycAvailable && (
+            <SecondaryButton
+              onPress={launchKycVerification}
+              disabled={isLoading}
+              textColor={slate700}
+              style={{ marginBottom: 0 }}
+            >
+              {isLoading ? 'Loading...' : 'Try Alternative Verification'}
+            </SecondaryButton>
+          )}
         </YStack>
       }
     >
@@ -109,13 +109,11 @@ const DocumentNFCTroubleScreen: React.FC = () => {
         paddingBottom={32}
         gap={20}
       >
-        <GestureDetector gesture={devModeTap}>
-          <View collapsable={false}>
-            <Caption size="large" style={{ color: slate500 }}>
-              Here are some tips to help you successfully scan the RFID chip:
-            </Caption>
-          </View>
-        </GestureDetector>
+        <Pressable onPress={onTitleTap}>
+          <Caption size="large" style={{ color: slate500 }}>
+            Here are some tips to help you successfully scan the RFID chip:
+          </Caption>
+        </Pressable>
         <Tips items={tips} />
         <Caption size="large" style={{ color: slate500 }}>
           These steps should help improve the success rate of reading the RFID

@@ -6,7 +6,11 @@ import React, { useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, XStack, YStack } from 'tamagui';
 import type { RouteProp } from '@react-navigation/native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import {
+  StackActions,
+  useNavigation,
+  useRoute,
+} from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Image } from '@tamagui/lucide-icons';
 
@@ -52,8 +56,8 @@ const getErrorMessages = (
     case 'general':
     default:
       return {
-        title: 'There was a problem reading the code',
-        description: 'Make sure the QR code is valid and try again',
+        title: 'There was a problem reading the document',
+        description: 'Make sure the document is valid and try again',
       };
   }
 };
@@ -68,7 +72,11 @@ const AadhaarUploadErrorScreen: React.FC = () => {
   const errorType = route.params?.errorType || 'general';
   const { title, description } = getErrorMessages(errorType);
 
-  const { launchKycVerification, isLoading: isRetrying } = useKycLauncher({
+  const {
+    launchKycVerification,
+    isKycAvailable,
+    isLoading: isRetrying,
+  } = useKycLauncher({
     countryCode: 'IND',
     onCancel: () => {
       navigation.goBack();
@@ -84,7 +92,10 @@ const AadhaarUploadErrorScreen: React.FC = () => {
   }, [navigation]);
 
   const handleTryAgain = useCallback(() => {
-    navigation.goBack();
+    // On the PDF path, goBack would land on the password screen for the same
+    // unusable PDF; pop to the picker instead. popTo keeps the existing
+    // AadhaarUpload params (countryCode).
+    navigation.dispatch(StackActions.popTo('AadhaarUpload'));
   }, [navigation]);
 
   const handleTryAlternative = useCallback(async () => {
@@ -205,27 +216,29 @@ const AadhaarUploadErrorScreen: React.FC = () => {
         gap={10}
       >
         {/* Secondary Button - White fill, black text, rounded */}
-        <Button
-          backgroundColor={white}
-          borderWidth={1}
-          borderColor={slate200}
-          borderRadius={100}
-          height={52}
-          pressStyle={{ opacity: 0.8 }}
-          onPress={handleTryAlternative}
-          disabled={isRetrying}
-        >
-          <BodyText
-            style={{
-              fontSize: 17,
-              fontWeight: '500',
-              fontFamily: dinot,
-              color: black,
-            }}
+        {isKycAvailable && (
+          <Button
+            backgroundColor={white}
+            borderWidth={1}
+            borderColor={slate200}
+            borderRadius={100}
+            height={52}
+            pressStyle={{ opacity: 0.8 }}
+            onPress={handleTryAlternative}
+            disabled={isRetrying}
           >
-            {isRetrying ? 'Loading...' : 'Try a different method'}
-          </BodyText>
-        </Button>
+            <BodyText
+              style={{
+                fontSize: 17,
+                fontWeight: '500',
+                fontFamily: dinot,
+                color: black,
+              }}
+            >
+              {isRetrying ? 'Loading...' : 'Try a different method'}
+            </BodyText>
+          </Button>
+        )}
 
         {/* Footer Text - Not italic */}
         <BodyText

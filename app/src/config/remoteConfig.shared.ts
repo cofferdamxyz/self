@@ -24,6 +24,18 @@ export interface RemoteConfigBackend {
   setDefaults(defaults: Record<string, FeatureFlagValue>): Promise<void> | void;
   setConfigSettings(settings: Record<string, unknown>): Promise<void> | void;
   fetchAndActivate(): Promise<boolean>;
+  activate(): Promise<boolean>;
+  /**
+   * Real-time template updates pushed by the server. The SDK has already
+   * fetched the new values when `listener` fires; the caller activates them.
+   * Returns an unsubscribe function.
+   */
+  onConfigUpdated(
+    listener: (
+      event?: { updatedKeys: string[] },
+      error?: { code?: string; message: string },
+    ) => void,
+  ): () => void;
 }
 
 export interface RemoteConfigValue {
@@ -41,14 +53,69 @@ export interface StorageBackend {
 
 export const LOCAL_OVERRIDES_KEY = 'feature_flag_overrides';
 
+// Remotely-controllable hint shown on the e-Aadhaar PDF password screen. The
+// UIDAI password format is decided by Aadhaar and may change, so this copy is
+// served from Remote Config. Setting the remote value to an empty string hides
+// the hint entirely.
+export const AADHAAR_PDF_PASSWORD_HINT_FLAG = 'aadhaar_pdf_password_hint';
+export const DEFAULT_AADHAAR_PDF_PASSWORD_HINT =
+  'Password is the first 4 letters of your name in CAPITALS + your birth year, e.g. SELF2026.';
+
+// Third-party (Didit) KYC verification path. The boolean is the global
+// switch; the string is a comma-separated list of ISO 3166-1 alpha-3 document
+// countries (e.g. "IND,USA") for which the path stays hidden even when the
+// global switch is on. Both evaluate against the country the user picked, not
+// the device locale.
+export const KYC_FLOW_ENABLED_FLAG = 'kyc_flow_enabled';
+export const KYC_FLOW_DISABLED_COUNTRIES_FLAG = 'kyc_flow_disabled_countries';
+export const DEFAULT_KYC_FLOW_ENABLED = true;
+export const DEFAULT_KYC_FLOW_DISABLED_COUNTRIES = '';
+
 // Default feature flags - this should be defined by the consuming application
-const defaultFlags: Record<string, string | boolean> = {};
+const defaultFlags: Record<string, string | boolean> = {
+  [AADHAAR_PDF_PASSWORD_HINT_FLAG]: DEFAULT_AADHAAR_PDF_PASSWORD_HINT,
+  [KYC_FLOW_ENABLED_FLAG]: DEFAULT_KYC_FLOW_ENABLED,
+  [KYC_FLOW_DISABLED_COUNTRIES_FLAG]: DEFAULT_KYC_FLOW_DISABLED_COUNTRIES,
+};
+
+type RemoteConfigListener = () => void;
+const remoteConfigListeners = new Set<RemoteConfigListener>();
+let remoteConfigInitialized = false;
+
+const notifyRemoteConfigListeners = () => {
+  remoteConfigListeners.forEach(listener => {
+    try {
+      listener();
+    } catch (error) {
+      console.error('Remote config listener failed:', error);
+    }
+  });
+};
+
+/**
+ * Runs `listener` whenever the effective flag values may have changed: after
+ * the initial fetch, a manual refresh, or a local override edit. If remote
+ * config is already initialized the listener runs once immediately, so late
+ * subscribers never miss the first activation.
+ */
+export const subscribeToRemoteConfig = (
+  listener: RemoteConfigListener,
+): (() => void) => {
+  remoteConfigListeners.add(listener);
+  if (remoteConfigInitialized) {
+    listener();
+  }
+  return () => {
+    remoteConfigListeners.delete(listener);
+  };
+};
 
 export const clearAllLocalOverrides = async (
   storage: StorageBackend,
 ): Promise<void> => {
   try {
     await storage.removeItem(LOCAL_OVERRIDES_KEY);
+    notifyRemoteConfigListeners();
   } catch (error) {
     console.error('Failed to clear all local overrides:', error);
   }
@@ -62,6 +129,7 @@ export const clearLocalOverride = async (
     const overrides = await getLocalOverrides(storage);
     delete overrides[flag];
     await storage.setItem(LOCAL_OVERRIDES_KEY, JSON.stringify(overrides));
+    notifyRemoteConfigListeners();
   } catch (error) {
     console.error('Failed to clear local override:', error);
   }
@@ -150,6 +218,39 @@ export const getAllFeatureFlags = async (
   }
 };
 
+/**
+ * Resolves a flag (local override, then remote value, then `defaultValue`).
+ * Unlike `getFeatureFlag`, a failed read rejects instead of returning the
+ * default, so callers that cache the result can keep their last known value.
+ */
+export const readFeatureFlag = async <T extends FeatureFlagValue>(
+  remoteConfig: RemoteConfigBackend,
+  storage: StorageBackend,
+  flag: string,
+  defaultValue: T,
+): Promise<T> => {
+  // Check local overrides first
+  const localOverrides = await readLocalOverrides(storage);
+  if (Object.prototype.hasOwnProperty.call(localOverrides, flag)) {
+    return localOverrides[flag] as T;
+  }
+
+  // For string flags, only override the baked-in default when the server has
+  // actually set a value. An explicit empty string is a valid remote value
+  // (used to hide optional UI copy), so we key off the value source rather
+  // than emptiness.
+  if (typeof defaultValue === 'string') {
+    const configValue = remoteConfig.getValue(flag);
+    if (configValue.getSource() === 'remote') {
+      return configValue.asString() as T;
+    }
+    return defaultValue;
+  }
+
+  // Fall back to remote config for number and boolean flags
+  return getRemoteConfigValue(remoteConfig, flag, defaultValue) as T;
+};
+
 export const getFeatureFlag = async <T extends FeatureFlagValue>(
   remoteConfig: RemoteConfigBackend,
   storage: StorageBackend,
@@ -157,19 +258,7 @@ export const getFeatureFlag = async <T extends FeatureFlagValue>(
   defaultValue: T,
 ): Promise<T> => {
   try {
-    // Check local overrides first
-    const localOverrides = await getLocalOverrides(storage);
-    if (Object.prototype.hasOwnProperty.call(localOverrides, flag)) {
-      return localOverrides[flag] as T;
-    }
-
-    // Return default value for string flags
-    if (typeof defaultValue === 'string') {
-      return defaultValue;
-    }
-
-    // Fall back to remote config for number and boolean flags
-    return getRemoteConfigValue(remoteConfig, flag, defaultValue) as T;
+    return await readFeatureFlag(remoteConfig, storage, flag, defaultValue);
   } catch (error) {
     console.error('Failed to get feature flag:', error);
     return defaultValue;
@@ -177,27 +266,39 @@ export const getFeatureFlag = async <T extends FeatureFlagValue>(
 };
 
 // Local override management
+
+/**
+ * Reads local overrides, rejecting when storage itself fails so callers can
+ * tell "no overrides" from "could not read overrides". Corrupt JSON is treated
+ * as no overrides: it is cleared and cannot be recovered by retrying.
+ */
+export const readLocalOverrides = async (
+  storage: StorageBackend,
+): Promise<LocalOverride> => {
+  const overrides = await storage.getItem(LOCAL_OVERRIDES_KEY);
+  if (!overrides) {
+    return {};
+  }
+  try {
+    return JSON.parse(overrides);
+  } catch (error) {
+    console.error('Failed to parse local overrides:', error);
+    try {
+      await storage.removeItem(LOCAL_OVERRIDES_KEY);
+    } catch (removeError) {
+      console.error('Failed to clear corrupt local overrides:', removeError);
+    }
+    return {};
+  }
+};
+
 export const getLocalOverrides = async (
   storage: StorageBackend,
 ): Promise<LocalOverride> => {
   try {
-    const overrides = await storage.getItem(LOCAL_OVERRIDES_KEY);
-    if (!overrides) {
-      return {};
-    }
-    return JSON.parse(overrides);
+    return await readLocalOverrides(storage);
   } catch (error) {
     console.error('Failed to get local overrides:', error);
-
-    // If JSON parsing fails, clear the corrupt data
-    if (error instanceof SyntaxError) {
-      try {
-        await storage.removeItem(LOCAL_OVERRIDES_KEY);
-      } catch (removeError) {
-        console.error('Failed to clear corrupt local overrides:', removeError);
-      }
-    }
-
     return {};
   }
 };
@@ -236,10 +337,44 @@ export const initRemoteConfig = async (
   await remoteConfig.setConfigSettings({
     minimumFetchIntervalMillis: __DEV__ ? 0 : 3600000,
   });
+  // Values activated on a previous launch are readable right away. Publish
+  // them before the network round-trip so a cached restriction applies even
+  // when the fetch is slow or offline.
+  remoteConfigInitialized = true;
+  notifyRemoteConfigListeners();
   try {
     await remoteConfig.fetchAndActivate();
   } catch (err) {
     console.error('Remote config fetch failed', err);
+  }
+  notifyRemoteConfigListeners();
+  startRealtimeUpdates(remoteConfig);
+};
+
+let stopRealtimeUpdates: (() => void) | null = null;
+
+// Server-pushed template changes land within seconds while the app is in the
+// foreground, instead of waiting for the next launch past the fetch interval.
+const startRealtimeUpdates = (remoteConfig: RemoteConfigBackend): void => {
+  stopRealtimeUpdates?.();
+  try {
+    stopRealtimeUpdates = remoteConfig.onConfigUpdated(
+      async (_event, error) => {
+        if (error) {
+          console.error('Remote config realtime update failed', error);
+          return;
+        }
+        try {
+          await remoteConfig.activate();
+        } catch (err) {
+          console.error('Remote config activate failed', err);
+          return;
+        }
+        notifyRemoteConfigListeners();
+      },
+    );
+  } catch (err) {
+    console.error('Remote config realtime subscription failed', err);
   }
 };
 
@@ -251,6 +386,7 @@ export const refreshRemoteConfig = async (
   } catch (err) {
     console.error('Remote config refresh failed', err);
   }
+  notifyRemoteConfigListeners();
 };
 
 export const setLocalOverride = async (
@@ -262,6 +398,7 @@ export const setLocalOverride = async (
     const overrides = await getLocalOverrides(storage);
     overrides[flag] = value;
     await storage.setItem(LOCAL_OVERRIDES_KEY, JSON.stringify(overrides));
+    notifyRemoteConfigListeners();
   } catch (error) {
     console.error('Failed to set local override:', error);
   }

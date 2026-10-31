@@ -12,6 +12,7 @@ import { slate100 } from '@selfxyz/mobile-sdk-alpha/constants/colors';
 import IDSelection from '@selfxyz/mobile-sdk-alpha/onboarding/id-selection-screen';
 
 import { DocumentFlowNavBar } from '@/components/navbar/DocumentFlowNavBar';
+import { useKycFlowEnabled } from '@/integrations/kyc';
 import type { RootStackParamList } from '@/navigation';
 import { extraYPadding } from '@/utils/styleUtils';
 
@@ -21,6 +22,7 @@ const IDPickerScreen: React.FC = () => {
   const route = useRoute<IDPickerScreenRouteProp>();
   const { countryCode = '', documentTypes = [] } = route.params || {};
   const bottom = useSafeAreaInsets().bottom;
+  const showKycOption = useKycFlowEnabled(countryCode);
 
   return (
     <YStack
@@ -29,7 +31,11 @@ const IDPickerScreen: React.FC = () => {
       paddingBottom={bottom + extraYPadding + 24}
     >
       <DocumentFlowNavBar title="GETTING STARTED" />
-      <IDSelection countryCode={countryCode} documentTypes={documentTypes} />
+      <IDSelection
+        countryCode={countryCode}
+        documentTypes={documentTypes}
+        showKycOption={showKycOption}
+      />
     </YStack>
   );
 };

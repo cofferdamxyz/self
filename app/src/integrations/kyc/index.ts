@@ -13,3 +13,7 @@ export {
   createKycSession,
   launchKycVerification,
 } from '@/integrations/kyc/kycService';
+export {
+  isKycFlowEnabled,
+  useKycFlowEnabled,
+} from '@/stores/kycAvailabilityStore';

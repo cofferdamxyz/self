@@ -11,14 +11,14 @@ import React, {
   useState,
 } from 'react';
 import {
+  Alert,
   Linking,
   NativeEventEmitter,
   NativeModules,
   Platform,
+  Pressable,
   StyleSheet,
-  View,
 } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import NfcManager from 'react-native-nfc-manager';
 import { Button, Image, XStack } from 'tamagui';
 import { v4 as uuidv4 } from 'uuid';
@@ -67,6 +67,7 @@ import { useErrorInjection } from '@/hooks/useErrorInjection';
 import { useFeedbackAutoHide } from '@/hooks/useFeedbackAutoHide';
 import useHapticNavigation from '@/hooks/useHapticNavigation';
 import { useKycLauncher } from '@/hooks/useKycLauncher';
+import { useMultiTap } from '@/hooks/useMultiTap';
 import useOpenSupportForm from '@/hooks/useOpenSupportForm';
 import {
   buttonTap,
@@ -74,6 +75,12 @@ import {
   feedbackUnsuccessful,
   impactLight,
 } from '@/integrations/haptics';
+import {
+  isFixtureCaptureSupported,
+  listTapes,
+  shareTape,
+  uploadTapeToSentry,
+} from '@/integrations/nfc/fixtureCapture';
 import { parseScanResponse, scan } from '@/integrations/nfc/nfcScanner';
 import { ExpandableBottomLayout } from '@/layouts/ExpandableBottomLayout';
 import type { RootStackParamList } from '@/navigation';
@@ -89,6 +96,7 @@ import {
   SUPPORT_FORM_BUTTON_TEXT,
   SUPPORT_FORM_MESSAGE,
 } from '@/services/support';
+import { useSettingStore } from '@/stores/settingStore';
 
 const emitter =
   Platform.OS === 'android'
@@ -131,6 +139,7 @@ const DocumentNFCScanScreen: React.FC = () => {
   const {
     launchKycVerification,
     showKycFallbackModal,
+    isKycAvailable,
     isLoading: isKycLoading,
   } = useKycLauncher({
     countryCode,
@@ -144,6 +153,31 @@ const DocumentNFCScanScreen: React.FC = () => {
   const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scanCancelledRef = useRef(false);
   const [sessionId] = useState(() => uuidv4());
+  const fixtureCaptureEnabled = useSettingStore(
+    state => state.fixtureCaptureEnabled,
+  );
+
+  // After a failed read, if diagnostic capture is on, offer to send the staged
+  // (redacted) tape. The tape for this session was already written at scan end.
+  const promptShareDiagnostic = useCallback(async () => {
+    if (!fixtureCaptureEnabled || !isFixtureCaptureSupported) {
+      return;
+    }
+    const tapes = await listTapes();
+    const latest = tapes[tapes.length - 1];
+    if (!latest) {
+      return;
+    }
+    Alert.alert(
+      'Reading failed',
+      'Share a diagnostic log to help us fix this? It contains no personal data — only the chip type, country, and command/status sequence.',
+      [
+        { text: 'Not now', style: 'cancel' },
+        { text: 'Send to Self', onPress: () => uploadTapeToSentry(latest) },
+        { text: 'Share', onPress: () => shareTape(latest.name) },
+      ],
+    );
+  }, [fixtureCaptureEnabled]);
 
   const baseContext = useMemo(
     () => ({
@@ -191,11 +225,9 @@ const DocumentNFCScanScreen: React.FC = () => {
   const goToNFCTrouble = useHapticNavigation('DocumentNFCTrouble');
 
   // 5-taps with a single finger
-  const devModeTap = Gesture.Tap()
-    .numberOfTaps(5)
-    .onStart(() => {
-      goToNFCMethodSelection();
-    });
+  const onTitleTap = useMultiTap({
+    thresholds: [{ taps: 5, onReach: goToNFCMethodSelection }],
+  });
 
   const onReportIssue = useCallback(() => {
     openSupportForm();
@@ -479,6 +511,7 @@ const DocumentNFCScanScreen: React.FC = () => {
         openErrorModal(message);
         // We deliberately avoid opening any external feedback widgets here;
         // users can request support via the support form action in the modal.
+        promptShareDiagnostic().catch(() => undefined);
       } finally {
         if (scanTimeoutRef.current) {
           clearTimeout(scanTimeoutRef.current);
@@ -507,6 +540,7 @@ const DocumentNFCScanScreen: React.FC = () => {
     isPacePolling,
     navigation,
     openErrorModal,
+    promptShareDiagnostic,
     selfClient,
     sessionId,
     shouldInjectError,
@@ -633,23 +667,21 @@ const DocumentNFCScanScreen: React.FC = () => {
           ) : (
             <>
               <TextsContainer>
-                <GestureDetector gesture={devModeTap}>
-                  <View collapsable={false}>
-                    <XStack
-                      justifyContent="space-between"
-                      alignItems="center"
-                      gap="$1.5"
-                    >
-                      <Title>Verify your ID</Title>
-                      <Button
-                        unstyled
-                        onPress={goToNFCTrouble}
-                        icon={<CircleHelp size={28} color={slate500} />}
-                        aria-label="Help"
-                      />
-                    </XStack>
-                  </View>
-                </GestureDetector>
+                <XStack
+                  justifyContent="space-between"
+                  alignItems="center"
+                  gap="$1.5"
+                >
+                  <Pressable onPress={onTitleTap}>
+                    <Title>Verify your ID</Title>
+                  </Pressable>
+                  <Button
+                    unstyled
+                    onPress={goToNFCTrouble}
+                    icon={<CircleHelp size={28} color={slate500} />}
+                    aria-label="Help"
+                  />
+                </XStack>
                 {isNfcEnabled ? (
                   <>
                     <Title style={[styles.title, { marginTop: 8 }]}>
@@ -694,7 +726,7 @@ const DocumentNFCScanScreen: React.FC = () => {
                 <SecondaryButton onPress={onReportIssue}>
                   {SUPPORT_FORM_BUTTON_TEXT}
                 </SecondaryButton>
-                {(!isNfcSupported || !isNfcEnabled) && (
+                {(!isNfcSupported || !isNfcEnabled) && isKycAvailable && (
                   <SecondaryButton
                     onPress={launchKycVerification}
                     disabled={isKycLoading}

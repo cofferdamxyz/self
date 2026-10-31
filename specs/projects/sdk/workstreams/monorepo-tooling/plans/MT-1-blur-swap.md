@@ -1,7 +1,17 @@
 ## Swap `react-native-blur-effect` to `@react-native-community/blur`
 
-> Last updated: 2026-05-20
-> Status: Draft
+> Last updated: 2026-08-06
+> Status: Partial - MT-1 dep added, removals outstanding (MT-2)
+
+**State as of 2026-08-06.** `@react-native-community/blur@^4.4.1` is in
+`app/package.json`, but every `react-native-blur-effect` declaration in the
+"Scope" list below is still present, as is
+`app/tests/__setup__/blurEffectMock.js`. The nested duplicate `react-native`
+this plan exists to remove is **not** currently present — the lockfile resolves
+`react-native-blur-effect@1.1.3` against the same `react-native@0.83.9` as the
+rest of the workspace, held there by the `overrides` pin. The goal is met by
+configuration; the cleanup is not done. Re-verify the nested copy is absent
+after dropping that override.
 
 - Workstream: monorepo-tooling
 - Backlog IDs: MT-1, MT-2
@@ -28,11 +38,17 @@ consumers and remove temporary local cleanup.
 ### Scope
 
 - Bump Euclid consumers in this repo to the version containing the blur swap.
-- Remove direct `react-native-blur-effect` dependencies from:
-  - `app/package.json`
-  - `packages/mobile-sdk-demo/package.json`
-  - root `package.json` `resolutions` / pnpm override entries, if present
-- Drop the `@selfxyz/euclid` peer workaround in `pnpm-workspace.yaml`.
+- Remove every `react-native-blur-effect` declaration. It is currently present
+  in all of the following — each must be removed for the nested RN duplicate to
+  go away:
+  - `app/package.json` — the `dependencies` entry **and** the
+    `react-native-blur-effect` line in the root-level `overrides` block.
+  - `packages/mobile-sdk-alpha/package.json` — the `peerDependencies` entry
+    **and** the matching `peerDependenciesMeta` optional block.
+  - `packages/mobile-sdk-demo/package.json` — the dependency entry.
+  - root `package.json` — the `resolutions` pin.
+  - `pnpm-workspace.yaml` — the `overrides` pin **and** the
+    `@selfxyz/euclid` peer-optional workaround block.
 - Remove `app/tests/__setup__/blurEffectMock.js`.
 - Remove the related `moduleNameMapper` entry from `app/jest.config.cjs`.
 

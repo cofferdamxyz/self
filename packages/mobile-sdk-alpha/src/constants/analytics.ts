@@ -3,12 +3,16 @@
 // NOTE: Converts to Apache-2.0 on 2029-06-11 per LICENSE.
 
 export const AadhaarEvents = {
+  APP_INSTALL_PRESSED: 'Aadhaar: App Install Pressed',
   CONTINUE_PRESSED: 'Aadhaar: Continue Pressed',
   DATA_STORED: 'Aadhaar: Data Stored',
+  DOWNLOAD_NEXT_PRESSED: 'Aadhaar: Download Next Pressed',
+  INSTRUCTIONS_VIEWED: 'Aadhaar: Instructions Viewed',
   PHOTO_PERMISSION_DENIED: 'Aadhaar: Photo Permission Denied',
   QR_PARSE_FAILED: 'Aadhaar: QR Parse Failed',
   QR_SELECTED: 'Aadhaar: QR Selected',
   TIMESTAMP_EXPIRED: 'Aadhaar: Timestamp Expired',
+  UPLOAD_FAILED: 'Aadhaar: Upload Failed',
   UPLOAD_STARTED: 'Aadhaar: Upload Started',
 } as const;
 
@@ -17,6 +21,7 @@ export const AppEvents = {
   GET_STARTED: 'App: Get Started',
   GET_STARTED_AADHAAR: 'App: Get Started - Aadhaar',
   GET_STARTED_BIOMETRIC: 'App: Get Started - Biometric ID',
+  STORE_REVIEW_REQUESTED: 'App: Store Review Requested',
   SUPPORTED_BIOMETRIC_IDS: 'App: Supported Biometric IDs',
   UPDATE_MODAL_CLOSED: 'App: Update Modal Closed',
   UPDATE_MODAL_OPENED: 'App: Update Modal Opened',
@@ -38,11 +43,13 @@ export const BackupEvents = {
   CLOUD_BACKUP_DISABLED_DONE: 'Backup: Cloud Backup Disabled Done',
   CLOUD_BACKUP_DISABLE_STARTED: 'Backup: Cloud Backup Disable Started',
   CLOUD_BACKUP_ENABLED_DONE: 'Backup: Cloud Backup Enabled Done',
+  CLOUD_BACKUP_ENABLE_FAILED: 'Backup: Cloud Backup Enable Failed',
   CLOUD_BACKUP_ENABLE_STARTED: 'Backup: Cloud Backup Enable Started',
   CLOUD_BACKUP_STARTED: 'Backup: Cloud Backup Started',
   CLOUD_RESTORE_FAILED_AUTH: 'Backup: Cloud Restore Failed: Authentication Failed',
   CLOUD_RESTORE_FAILED_PASSPORT_NOT_REGISTERED: 'Backup: Cloud Restore Failed: Passport Not Registered',
   CLOUD_RESTORE_FAILED_UNKNOWN: 'Backup: Cloud Restore Failed: Unknown Error',
+  CLOUD_RESTORE_STARTED: 'Backup: Cloud Restore Started',
   CLOUD_RESTORE_SUCCESS: 'Backup: Cloud Restore Success',
   TURNKEY_RESTORE_FAILED: 'Backup: Turnkey Restore Failed',
   CREATE_NEW_ACCOUNT: 'Backup: Create New Account',
@@ -78,6 +85,9 @@ export const DocumentEvents = {
 } as const;
 
 export const KycEvents = {
+  FAUCET_NOTICE_CONTINUED: 'KYC: Faucet Notice Continued',
+  FAUCET_NOTICE_DECLINED: 'KYC: Faucet Notice Declined',
+  FAUCET_NOTICE_SHOWN: 'KYC: Faucet Notice Shown',
   PROVIDER_CLOSED: 'KYC: Provider Closed',
   PROVIDER_OPENED: 'KYC: Provider Opened',
   RETRY_TRIGGERED: 'KYC: Retry Triggered',
